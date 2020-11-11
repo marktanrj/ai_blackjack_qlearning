@@ -165,7 +165,7 @@ class Dealer:
 
 
 class Qlearning(Player):
-    def __init__(self, epsilon=0.1, alpha=0.3, gamma=0.9):
+    def __init__(self, epsilon=0, alpha=0.3, gamma=0.9):
         super().__init__()
         self.epsilon=epsilon
         self.alpha=alpha
@@ -181,7 +181,8 @@ class Qlearning(Player):
         self.state_action_last = None
 
     def epslion_greedy(self, possible_moves): #esplion greedy algorithm
-        self.last_state = tuple(self.cards)
+        # self.last_state = tuple(self.cards)
+        self.last_state = DeckHelpers.getSumOfCards(self.cards)
         if(random.random() < self.epsilon):
             move = random.choice(possible_moves)
             self.state_action_last = (self.last_state, move)
@@ -206,13 +207,13 @@ class Qlearning(Player):
 
     def getQ(self, state, action): #get Q states
         if(self.Q.get((state, action))) is None:
-            self.Q[(state, action)] = 0.5
+            self.Q[(state, action)] = 0
         return self.Q.get((state, action))
 
     def updateQ(self, reward, possible_moves): # update Q states using Qleanning
         q_list=[]
         for moves in possible_moves:
-            q_list.append(self.getQ(tuple(self.cards), moves))
+            q_list.append(self.getQ(DeckHelpers.getSumOfCards(self.cards), moves))
         if q_list:
             max_q_next = max(q_list)
         else:
@@ -229,12 +230,12 @@ class Qlearning(Player):
 
 
 # Training
-trainIterations = 100
-game = BackJackGame(enableLog=True)
+trainIterations = 100000
+game = BackJackGame(enableLog=False)
 aiPlayer = Qlearning()
 dealer = Dealer()
 game.initializeTraining(aiPlayer, dealer)
-game.train(trainIterations, continueTrainingFromState=True)
+game.train(trainIterations, continueTrainingFromState=False)
 game.printStats()
 game.saveStates()
 
