@@ -7,7 +7,7 @@ class DeckHelpers:
     def getCard():
         deck = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         color = ""
-        if random.uniform(0, 1) <= (2/3):
+        if random.uniform(0, 1) <= 2/3:
             color = "black"
         else:
             color = "red"
