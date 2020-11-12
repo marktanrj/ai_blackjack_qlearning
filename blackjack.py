@@ -9,7 +9,6 @@ class DeckHelpers:
         value = random.choice(deck)
         color = "black"
         return (value, color)
-        # return (value, "black")
     
     @staticmethod
     def getCard():
@@ -22,6 +21,8 @@ class DeckHelpers:
         value = random.choice(deck)
 
         return (value, color)
+        # return (value, "black")
+
 
     @staticmethod
     def getSumOfCards(cards):
@@ -243,7 +244,7 @@ class Dealer:
 
 
 class Qlearning(Player):
-    def __init__(self, epsilon=0.05, alpha=0.3, gamma=0.9):
+    def __init__(self, epsilon=0.1, alpha=0.3, gamma=0.9):
         super().__init__()
         self.epsilon=epsilon
         self.alpha=alpha
@@ -307,17 +308,17 @@ class Qlearning(Player):
 
 
 ## Training
-trainIterations = 1000
+trainIterations = 10000
 game = BackJackGame(enableLog=False)
 aiPlayer = Qlearning()
 dealer = Dealer()
 game.initializeTraining(aiPlayer, dealer)
-game.train(trainIterations, loadPreviousState=True)
+game.train(trainIterations, loadPreviousState=False)
 game.printStats()
 game.saveStates() # to overwrite trained state
 
 ## Play against AI
-game = BackJackGame(enableLog=True)  # game instance
-humanPlayer = Player()  # human player
-aiDealer = Qlearning()  # agent
-game.startGameWithHuman(humanPlayer, aiDealer)
+# game = BackJackGame(enableLog=True)  # game instance
+# humanPlayer = Player()  # human player
+# aiDealer = Qlearning()  # agent
+# game.startGameWithHuman(humanPlayer, aiDealer)
