@@ -127,7 +127,7 @@ class BackJackGame:
             self.player.drawCard()
             self.dealer.drawCard()
             
-            # player
+            # player's turn
             self.player.displayCards()
             playerInput = self.player.promptAction()
             while playerInput == "h":
@@ -142,7 +142,7 @@ class BackJackGame:
                 else:
                     playerInput = self.player.promptAction()
                 
-            # ai
+            # ai's turn
             dealerMove = self.dealer.epslion_greedy(self.possible_moves)
             while dealerMove == "hit":
                 self.dealer.drawCard()
@@ -174,16 +174,17 @@ class BackJackGame:
         totalLosesPercent = round(totalLoses / total * 100, 2)
 
         print(f"---TRAIN STATISTICS---")
-        print(f"Q-Learning Table Length: {qlen}")
         print(f"Total Rounds: {total}")
-        print(f"Win: {winNum} rounds - {winPercent}%")
-        print(f"Lose: {lostNum} rounds - {losePercent}%")
+        print(f"Q-Learning Table Length: {qlen}")
+        print(f"Player Win: {winNum} rounds - {winPercent}%")
+        print(f"Player Lose: {lostNum} rounds - {losePercent}%")
         print(f"Draw: {drawNum} rounds - {drawPercent}%")
         print(f"Player Bust: {playerbustNum} rounds - {playerbustPercent}%")
         print(f"Dealer Bust: {dealerbustNum} rounds - {dealerbustPercent}%")
         print(f"---SUMMARY---")
         print(f"Total Wins (Win + Dealer Bust): {totalWins} rounds - {totalWinsPercent}%")
         print(f"Total Loses (Lose + Player Bust): {totalLoses} rounds - {totalLosesPercent}%")
+        print(f"Draw: {drawNum} rounds - {drawPercent}%")
 
 class Player:
     def __init__(self):
