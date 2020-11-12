@@ -4,6 +4,14 @@ import pickle
 
 class DeckHelpers:
     @staticmethod
+    def getBlackCard():
+        deck = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        value = random.choice(deck)
+        color = "black"
+        return (value, color)
+        # return (value, "black")
+    
+    @staticmethod
     def getCard():
         deck = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         color = ""
@@ -14,7 +22,6 @@ class DeckHelpers:
         value = random.choice(deck)
 
         return (value, color)
-        # return (value, "black")
 
     @staticmethod
     def getSumOfCards(cards):
@@ -58,19 +65,17 @@ class BackJackGame:
             self.player.resetLastStateVariables()
             self.player.emptyCards()
             self.dealer.emptyCards()
-            self.player.drawCard()
-            self.dealer.drawCard()
+            self.player.drawBlackCard()
+            self.dealer.drawBlackCard()
 
             # AI player's turn
             playerMove = self.player.epslion_greedy(self.possible_moves)
-            while playerMove == "hit":
+            is21AboveOrBelow1 = self.player.is21AboveOrBelow1()
+            while not is21AboveOrBelow1 and playerMove == "hit":
                 self.player.drawCard()
-                is21orAbove = self.player.is21orAbove()
-                if is21orAbove:
-                    playerMove = self.player.epslion_greedy(self.only_stick_move)
-                else:
-                    playerMove = self.player.epslion_greedy(self.possible_moves)
-
+                playerMove = self.player.epslion_greedy(self.possible_moves)
+                is21AboveOrBelow1 = self.player.is21AboveOrBelow1()
+                    
             # dealer's turn
             dealerDone = self.dealer.isAbove17orBust()
             while not dealerDone:
@@ -124,30 +129,32 @@ class BackJackGame:
 
             self.player.emptyCards()
             self.dealer.emptyCards()
-            self.player.drawCard()
-            self.dealer.drawCard()
-            
+            self.player.drawBlackCard()
+            self.dealer.drawBlackCard()
+
             # player's turn
             self.player.displayCards()
             playerInput = self.player.promptAction()
-            while playerInput == "h":
+            is21AboveOrBelow1 = self.player.is21AboveOrBelow1()
+            while not is21AboveOrBelow1 and playerInput == "h":
                 self.player.drawCard()
                 self.player.displayCards()
-                if DeckHelpers.getSumOfCards(self.player.cards) > 21: 
+                is21AboveOrBelow1 = self.player.is21AboveOrBelow1()
+                if DeckHelpers.getSumOfCards(self.player.cards) > 21 or DeckHelpers.getSumOfCards(self.player.cards) < 1: 
                     print("You busted!")
-                    playerInput = "stick"
                 elif DeckHelpers.getSumOfCards(self.player.cards) == 21:
                     print("You Win!")
-                    playerInput = "stick"
                 else:
                     playerInput = self.player.promptAction()
                 
+              
+            
             # ai's turn
             dealerMove = self.dealer.epslion_greedy(self.possible_moves)
             while dealerMove == "hit":
                 self.dealer.drawCard()
-                is21orAbove = self.dealer.is21orAbove()
-                if is21orAbove:
+                is21AboveOrBelow1 = self.dealer.is21AboveOrBelow1()
+                if is21AboveOrBelow1:
                     dealerMove = self.dealer.epslion_greedy(self.only_stick_move)
                 else:
                     dealerMove = self.dealer.epslion_greedy(self.possible_moves)
@@ -194,12 +201,15 @@ class Player:
     def drawCard(self):
         self.cards.append(DeckHelpers.getCard())
     
+    def drawBlackCard(self):
+        self.cards.append(DeckHelpers.getBlackCard())
+
     def emptyCards(self):
         self.cards = []
     
-    def is21orAbove(self):
+    def is21AboveOrBelow1(self):
         playerSum = DeckHelpers.getSumOfCards(self.cards)
-        return playerSum >= 21
+        return (playerSum >= 21 or playerSum < 1)
     
     def promptAction(self):
         playerInput = input("What would you like to do? Hit or Stick? (h/s)\n")
@@ -220,6 +230,9 @@ class Dealer:
 
     def drawCard(self):
         self.cards.append(DeckHelpers.getCard())
+    
+    def drawBlackCard(self):
+        self.cards.append(DeckHelpers.getBlackCard())
 
     def emptyCards(self):
         self.cards = []
@@ -230,7 +243,7 @@ class Dealer:
 
 
 class Qlearning(Player):
-    def __init__(self, epsilon=0, alpha=0.3, gamma=0.9):
+    def __init__(self, epsilon=0.05, alpha=0.3, gamma=0.9):
         super().__init__()
         self.epsilon=epsilon
         self.alpha=alpha
@@ -295,16 +308,16 @@ class Qlearning(Player):
 
 ## Training
 trainIterations = 1000
-game = BackJackGame(enableLog=True)
+game = BackJackGame(enableLog=False)
 aiPlayer = Qlearning()
 dealer = Dealer()
 game.initializeTraining(aiPlayer, dealer)
 game.train(trainIterations, loadPreviousState=True)
 game.printStats()
-# game.saveStates() # to overwrite trained state
+game.saveStates() # to overwrite trained state
 
 ## Play against AI
-# game = BackJackGame(enableLog=True)  # game instance
-# humanPlayer = Player()  # human player
-# aiDealer = Qlearning()  # agent
-# game.startGameWithHuman(humanPlayer, aiDealer)
+game = BackJackGame(enableLog=True)  # game instance
+humanPlayer = Player()  # human player
+aiDealer = Qlearning()  # agent
+game.startGameWithHuman(humanPlayer, aiDealer)
