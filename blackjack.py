@@ -28,9 +28,7 @@ class DeckHelpers:
 
 class BackJackGame:
     def __init__(self, enableLog=True):
-        self.done = False
-        self.training = False
-
+        self.isTraining = False
         self.player = None
         self.dealer = None
         self.possible_moves = ["hit", "stick"]
@@ -41,47 +39,49 @@ class BackJackGame:
 
     def initializeTraining(self, player, dealer):
         if(isinstance(player, Qlearning) and isinstance(dealer, Dealer)):
-            self.training = True
+            self.isTraining = True
             self.player = player
             self.dealer = dealer
             
-
-    def train(self, iterations, continueTrainingFromState=False):
-        if continueTrainingFromState:
+    def train(self, iterations, loadPreviousState=False):
+        if not self.isTraining:
+            return print("initializeTraining() before train()")
+        if loadPreviousState:
             try:
                 self.player.loadQtable("blackjackAIstate")
             except Exception as error:
                 print(str(error))
-        if(self.training):
-            for i in range(iterations):
-                if self.enableLog: print("training iteration: ", i)
-                if i%10000 == 0: print("training iteration: ", i)
-                
-                self.player.resetLastStateVariables()
-                self.player.emptyCards()
-                self.dealer.emptyCards()
+        for i in range(iterations):
+            if self.enableLog: print("training iteration: ", i)
+            if i%10000 == 0: print("training iteration: ", i)
+            
+            self.player.resetLastStateVariables()
+            self.player.emptyCards()
+            self.dealer.emptyCards()
+            self.player.drawCard()
+            self.dealer.drawCard()
+
+            # AI player's turn
+            playerMove = self.player.epslion_greedy(self.possible_moves)
+            while playerMove == "hit":
                 self.player.drawCard()
+                is21orAbove = self.player.is21orAbove()
+                if is21orAbove:
+                    playerMove = self.player.epslion_greedy(self.only_stick_move)
+                else:
+                    playerMove = self.player.epslion_greedy(self.possible_moves)
+
+            # dealer's turn
+            dealerDone = self.dealer.isAbove17orBust()
+            while not dealerDone:
                 self.dealer.drawCard()
-
-                # AI player's turn
-                playerMove = self.player.epslion_greedy(self.possible_moves)
-                while playerMove == "hit":
-                    self.player.drawCard()
-                    is21orAbove = self.player.is21orAbove()
-                    if is21orAbove:
-                        playerMove = self.player.epslion_greedy(self.only_stick_move)
-                    else:
-                        playerMove = self.player.epslion_greedy(self.possible_moves)
-
-                # dealer's turn
                 dealerDone = self.dealer.isAbove17orBust()
-                while not dealerDone:
-                    self.dealer.drawCard()
-                    dealerDone = self.dealer.isAbove17orBust()
-                
-                # evaluate
-                reward = self.evaluate(self.player.cards, self.dealer.cards)
-                self.player.updateQ(reward, self.possible_moves)
+            
+            # evaluate
+            reward = self.evaluate(self.player.cards, self.dealer.cards)
+            self.player.updateQ(reward, self.possible_moves)
+
+        self.isTraining = False
 
     def evaluate(self, playerCards, dealerCards):
         playerSum = DeckHelpers.getSumOfCards(playerCards)
@@ -111,27 +111,79 @@ class BackJackGame:
     def saveStates(self):
         self.player.saveQtable("blackjackAIstate")
 
+    
+    def startGameWithHuman(self, player, dealer):
+        if isinstance(player, Player) and isinstance(dealer, Qlearning):
+            self.player = player
+            self.dealer = dealer
+
+            try:
+                self.dealer.loadQtable("blackjackAIstate")
+            except Exception as error:
+                print(str(error))
+
+            self.player.emptyCards()
+            self.dealer.emptyCards()
+            self.player.drawCard()
+            self.dealer.drawCard()
+            
+            # player
+            self.player.displayCards()
+            playerInput = self.player.promptAction()
+            while playerInput == "h":
+                self.player.drawCard()
+                self.player.displayCards()
+                if DeckHelpers.getSumOfCards(self.player.cards) > 21: 
+                    print("You busted!")
+                    playerInput = "stick"
+                elif DeckHelpers.getSumOfCards(self.player.cards) == 21:
+                    print("You Win!")
+                    playerInput = "stick"
+                else:
+                    playerInput = self.player.promptAction()
+                
+            # ai
+            dealerMove = self.dealer.epslion_greedy(self.possible_moves)
+            while dealerMove == "hit":
+                self.dealer.drawCard()
+                is21orAbove = self.dealer.is21orAbove()
+                if is21orAbove:
+                    dealerMove = self.dealer.epslion_greedy(self.only_stick_move)
+                else:
+                    dealerMove = self.dealer.epslion_greedy(self.possible_moves)
+
+            # evaluate game
+            self.evaluate(self.player.cards, self.dealer.cards)
+
     def printStats(self):
         qlen = len(self.player.Q)
         total = self.stats["win"] + self.stats["lose"] + self.stats["draw"] + self.stats["playerbust"] + self.stats["dealerbust"]
         winNum = self.stats["win"]
-        lostNum = self.stats["lose"]
-        drawNum = self.stats["draw"]
-        playerbustNum = self.stats["playerbust"]
-        dealerbustNum = self.stats["dealerbust"]
         winPercent = round(self.stats["win"] / total * 100, 2)
+        lostNum = self.stats["lose"]
         losePercent = round(self.stats["lose"] / total * 100, 2)
+        drawNum = self.stats["draw"]
         drawPercent = round(self.stats["draw"] / total * 100, 2)
+        playerbustNum = self.stats["playerbust"]
         playerbustPercent = round(self.stats["playerbust"] / total * 100, 2)
+        dealerbustNum = self.stats["dealerbust"]
         dealerbustPercent = round(self.stats["dealerbust"] / total * 100, 2)
+        totalWins = self.stats["win"] + self.stats["dealerbust"]
+        totalWinsPercent = round(totalWins / total * 100, 2)
+        totalLoses = self.stats["lose"] + self.stats["playerbust"]
+        totalLosesPercent = round(totalLoses / total * 100, 2)
+
         print(f"---TRAIN STATISTICS---")
         print(f"Q-Learning Table Length: {qlen}")
+        print(f"Total Rounds: {total}")
         print(f"Win: {winNum} rounds - {winPercent}%")
         print(f"Lose: {lostNum} rounds - {losePercent}%")
         print(f"Draw: {drawNum} rounds - {drawPercent}%")
         print(f"Player Bust: {playerbustNum} rounds - {playerbustPercent}%")
         print(f"Dealer Bust: {dealerbustNum} rounds - {dealerbustPercent}%")
-        
+        print(f"---SUMMARY---")
+        print(f"Total Wins (Win + Dealer Bust): {totalWins} rounds - {totalWinsPercent}%")
+        print(f"Total Loses (Lose + Player Bust): {totalLoses} rounds - {totalLosesPercent}%")
 
 class Player:
     def __init__(self):
@@ -147,6 +199,18 @@ class Player:
     def is21orAbove(self):
         playerSum = DeckHelpers.getSumOfCards(self.cards)
         return playerSum >= 21
+    
+    def promptAction(self):
+        playerInput = input("What would you like to do? Hit or Stick? (h/s)\n")
+        while playerInput != "h" and playerInput != "s":
+            playerInput = input("What would you like to do? Hit or Stick? (h/s)\n")
+        print("You have inputted: ", playerInput)
+        return playerInput
+    
+    def displayCards(self):
+        print("Your cards: ", self.cards)
+        print("Sum of cards: ", DeckHelpers.getSumOfCards(self.cards))
+
 
 class Dealer:
     def __init__(self):
@@ -204,7 +268,6 @@ class Qlearning(Player):
             self.q_last = self.getQ(self.last_state, possible_moves[i])
             return possible_moves[i]
 
-
     def getQ(self, state, action): #get Q states
         if(self.Q.get((state, action))) is None:
             self.Q[(state, action)] = 0
@@ -229,19 +292,18 @@ class Qlearning(Player):
             self.Q = pickle.load(handle)
 
 
-# Training
-trainIterations = 100000
-game = BackJackGame(enableLog=False)
+## Training
+trainIterations = 1000
+game = BackJackGame(enableLog=True)
 aiPlayer = Qlearning()
 dealer = Dealer()
 game.initializeTraining(aiPlayer, dealer)
-game.train(trainIterations, continueTrainingFromState=False)
+game.train(trainIterations, loadPreviousState=True)
 game.printStats()
-game.saveStates()
+# game.saveStates() # to overwrite trained state
 
-# game = BackJackGame()  # game instance
-# player1 = Humanplayer()  # human player
-# player2 = Qlearning()  # agent
-# game.startGame(player1, player2)  # player1 is X, player2 is 0
-# game.reset()  # reset
-# game.render()  # render display
+## Play against AI
+# game = BackJackGame(enableLog=True)  # game instance
+# humanPlayer = Player()  # human player
+# aiDealer = Qlearning()  # agent
+# game.startGameWithHuman(humanPlayer, aiDealer)
