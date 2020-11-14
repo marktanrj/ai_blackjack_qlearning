@@ -228,7 +228,7 @@ class BackJackGame:
     def saveStates(self):
         self.player.saveQtable("blackjackAIstate")
 
-    
+    # This function lets human play against trained AI. This is not needed for training.
     def startGameWithHuman(self, player, dealer):
         if isinstance(player, Player) and isinstance(dealer, Qlearning):
             self.player = player
