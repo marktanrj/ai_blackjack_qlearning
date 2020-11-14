@@ -5,6 +5,7 @@ import pickle
 class DeckHelpers:
     @staticmethod
     def getBlackCard():
+        # get black card for start of the game
         deck = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         value = random.choice(deck)
         color = "black"
@@ -12,6 +13,7 @@ class DeckHelpers:
     
     @staticmethod
     def getCard():
+        # get random card from deck
         deck = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         color = ""
         if random.uniform(0, 1) <= 2/3:
@@ -21,11 +23,10 @@ class DeckHelpers:
         value = random.choice(deck)
 
         return (value, color)
-        # return (value, "black")
-
 
     @staticmethod
     def getSumOfCards(cards):
+        # sum all the cards in a player's stack
         totalSum = 0
         for card in cards:
             if card[1] == "red":
@@ -93,6 +94,7 @@ class BackJackGame:
         playerSum = DeckHelpers.getSumOfCards(playerCards)
         dealerSum = DeckHelpers.getSumOfCards(dealerCards)
         
+        # returns reward
         if playerSum > 21 or playerSum < 1:
             if self.enableLog: print(f"Bust - player:{playerSum}, dealer:{dealerSum}, len:{len(playerCards)}")
             self.stats["playerbust"] += 1
@@ -148,8 +150,6 @@ class BackJackGame:
                 else:
                     playerInput = self.player.promptAction()
                 
-              
-            
             # ai's turn
             dealerMove = self.dealer.epslion_greedy(self.possible_moves)
             while dealerMove == "hit":
@@ -260,7 +260,6 @@ class Qlearning(Player):
         self.state_action_last = None
 
     def epslion_greedy(self, possible_moves): #esplion greedy algorithm
-        # self.last_state = tuple(self.cards)
         self.last_state = DeckHelpers.getSumOfCards(self.cards)
         if(random.random() < self.epsilon):
             move = random.choice(possible_moves)
