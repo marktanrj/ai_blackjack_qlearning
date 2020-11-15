@@ -305,11 +305,11 @@ class BackJackGame:
 
 ## Training
 trainIterations = 10000
-game = BackJackGame(enableLog=False)
+game = BackJackGame(enableLog=False) #enableLog prints log for every iteration
 aiPlayer = Qlearning()
 dealer = Dealer()
 game.initializeTraining(aiPlayer, dealer)
-game.train(trainIterations, loadPreviousState=False)
+game.train(trainIterations, loadPreviousState=True) # load/continue previous state if any
 game.printStats()
 game.saveStates() # to overwrite trained state
 
