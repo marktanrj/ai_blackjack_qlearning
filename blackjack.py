@@ -311,7 +311,7 @@ dealer = Dealer()
 game.initializeTraining(aiPlayer, dealer)
 game.train(trainIterations, loadPreviousState=True) # load/continue previous state if any
 game.printStats()
-game.saveStates() # to overwrite trained state
+game.saveStates() # save trained state
 
 ## Play against AI
 # game = BackJackGame(enableLog=True)  # game instance
