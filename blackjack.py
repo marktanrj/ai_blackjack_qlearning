@@ -313,7 +313,7 @@ game.train(trainIterations, loadPreviousState=True) # set loadPreviousState to T
 game.printStats()
 game.saveStates() # save trained state
 
-## Play against AI
+## Play against AI - This is independent of above code, uncomment to play with AI
 # game = BackJackGame(enableLog=True)  # game instance
 # humanPlayer = Player()  # human player
 # aiDealer = Qlearning()  # agent
